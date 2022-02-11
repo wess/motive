@@ -12,7 +12,7 @@ defining tasks. Motive uses *task* to identify commands that can be run from the
 -- task identifies what can be run using: $ motive taskname
 
 task taskname do -- this will get printed when running: $ motive list
-  print("Hello world")
+  exec("echo", "Hello world")
 end
 
 -- This function cannot be called from the command line and only available
@@ -27,6 +27,23 @@ task funcall do -- Call a lua function
 end
 
 ```
+
+With your Manifest in place, simply call your task from the command line:
+
+```shell
+$ motive funcall
+> Hello, world!
+$ motive taskname
+> Hello world
+```
+
+### What's included?
+> Everything Lua offers with the addition of a fancy `exec` function that runs shell commands.
+
+### Todo
+- Easy ways to install.
+- Built-in file watch, change, execute.
+- Request client because why not.
 
 # Contributing
 Contributions are welcome, just make a pull request. If you are including new functionality, please write a usage example, and include any information that will impact installation and/or setup.
