@@ -44,12 +44,17 @@ pub async fn run() -> Result<()> {
 
   let mut app = 
     App::new("Motive")
-    .version(env!("CARGO_PKG_VERSION"))
-    .about("Developer environment manager.")
-    .before_help("\n")
-    .setting(AppSettings::AllowExternalSubcommands)
-    .setting(AppSettings::ArgRequiredElseHelp)
-    .subcommand(Init::app());
+      .version(env!("CARGO_PKG_VERSION"))
+      .about("Developer environment manager.")
+      .before_help("\n")
+      .after_help("\n")
+      .setting(AppSettings::AllowExternalSubcommands)
+      .setting(AppSettings::ArgRequiredElseHelp)
+      .subcommand(Init::app())
+      .subcommand(
+        App::new("list")
+              .about("List available tasks from Manifest")
+    );
 
 
   let mut help = vec![];
