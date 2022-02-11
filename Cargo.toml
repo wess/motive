@@ -1,0 +1,31 @@
+[package]
+name = "motive"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+oxide = {path = "./libs/oxide"}
+mlua_derive = "0.6.0"
+colored = "2.0.0"
+
+[dependencies.tokio]
+version = "1.16.1"
+features = ["full"]
+
+[dependencies.clap]
+version = "3.0.14"
+features = ["derive"]
+
+[dependencies.serde]
+version = "1.0.136"
+features = ["derive"]
+
+[dependencies.chrono]
+version = "0.4.19"
+features = ["serde"]
+
+[dependencies.mlua]
+version = "0.7.3"
+features = ["lua54", "vendored", "serialize", "async", "macros"]
