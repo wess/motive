@@ -2,6 +2,20 @@
 A developer environment manager with a nice future. But first let's just make a simple task runner that takes advantage of a _special_ version of Lua.
 
 ### Installing
+- *macOS*
+
+```shell
+$ brew tap wess/packages
+$ brew update
+$ brew install motive
+$ cd /to/some/dir
+$ motive init
+```
+
+- *windows*
+> to do
+
+- *linux*
 > to do
 
 ### Getting started
