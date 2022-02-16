@@ -41,7 +41,7 @@ build: ## Build the project in debug mode
 release: CARGO_FLAGS += --release
 release: build ## Build the project in release mode
 	@cd ./target/release && \
-	tar -czf motive-0.0.1-x86_64-apple-darwin.tar.gz motive
+	tar -czf motive-0.0.2-x86_64-apple-darwin.tar.gz motive
 
 
 ### Lints: https://rust-lang.github.io/rust-clippy/master/index.html
