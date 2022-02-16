@@ -25,6 +25,32 @@ use mlua::{
 
 use colored::*;
 
+
+const IGNORED_KEYWORDS: [&str; 22] = [
+  "and",   
+  "break",
+  "do",    
+  "else",
+  "elseif",
+  "end",   
+  "false",     
+  "for",
+  "function",
+  "if",
+  "in",   
+  "local",     
+  "nil",     
+  "not",      
+  "or",
+  "repeat",  
+  "return",    
+  "then",    
+  "true",   
+  "until",
+  "while",
+  "print",
+];
+
 pub struct Engine {
   lua: Lua,
   source:String,
@@ -89,6 +115,13 @@ impl Engine {
     let mut args = args.into_iter().map(|s| s.clone()).collect::<Vec<String>>();
     let mut cmd = args.remove(0);
   
+    let mut muted = false;
+    if cmd.starts_with("@") {
+      muted = true;
+
+      cmd = cmd.replace("@", "");
+    }
+
     if cmd.contains(" ") {
       let mut parts:Vec<String> = cmd.split(" ").map(|s| s.to_string()).collect();
       cmd = parts.remove(0);
@@ -103,72 +136,102 @@ impl Engine {
       .output()
       .expect("failed to execute process");
   
-    stdout().write_all(&result.stdout).unwrap();
-    stderr().write_all(&result.stderr).unwrap();
+    if !muted {
+      stdout().write_all(&result.stdout).unwrap();
+      stderr().write_all(&result.stderr).unwrap();
+    }
   
     Ok(())
   }
   
 
-  fn translate(source:String) -> (String, HashMap<String, String>) {
-    let mut name:String = string!("");
-    let mut description:String = string!("");
-    let mut body:Vec<String> = vec![string!("function()")];
-  
-    let mut result:Vec<String> = vec![];
-    let mut registry:HashMap<String, String> = HashMap::new();
-  
-    let mut in_task = false;
-    for line in source.lines().into_iter() {
-      if line.starts_with("task") {
-        in_task = true;
+  fn function_names(source:String) -> Vec<String> {
+    let mut names:Vec<String> = vec![];
+    let pattern = regex::Regex::new(r"function[\t|\s]+(?P<fname>\w+)\s*\(\).*").unwrap();
 
+    for line in source.lines().into_iter() {
+      match pattern.captures(line) {
+        Some(m) => {
+          match m.name("fname").map(|m| m.as_str()) {
+            Some(n) => names.push(n.to_string()),
+            None => {},
+          };
+
+        },
+        None => {},
+      }
+    }
+
+    names
+  }
+
+  fn translate(raw:String) -> (String, HashMap<String, String>) {
+    let function_names = Self::function_names(raw.clone());
+    let keywords = IGNORED_KEYWORDS.to_vec();
+    let mut registry = HashMap::new();
+
+    let mut source:Vec<String> = vec![string!("motive.tasks = {}\n")];
+
+
+    for (index, line) in raw.lines().into_iter().enumerate() {
+      if line.starts_with("task") {
         let mut current = string!(line);
+
+        let mut description = string!("");
+        let parts = line.split("--").collect::<Vec<&str>>();
         
         if line.contains("--") {
-          let parts = line.split("--").collect::<Vec<&str>>();
           current = string!(parts[0]);
           description = string!(parts[1]);
         }
-  
-        name = current
-          .replace("task", "")
-          .replace("do", "")
-          .trim()
-          .to_string();
-  
+
+        let name = current
+        .replace("task", "")
+        .trim()
+        .to_string();
+
+        registry.insert(name.clone(), description.clone());
+
+        source.push(
+          format!("motive.tasks.{} = function()\n", name)
+        );
 
         continue;
       }
 
+      if line.starts_with("--") || line.is_empty() || index < 1 {
+        source.push(string!(line));
+
+        continue;
+      }
       
-      if in_task {
-        body.push(line.trim().to_string());
-  
-        if line.ends_with("end") {
-          in_task = false;
-  
-          let task_name = name.clone();
-          result.push(format!("motive.tasks.{} = {}", task_name, body.join("\n")));
 
-
-          registry.insert(name.clone(), description.clone());
-
-          name = string!("");
-          description = string!("");
-          body = vec![string!("function()")];
+      let chunks:Vec<String> = line.trim().split(" ").into_iter().map(|s| s.to_string()).collect();
+      if let Some(word) = chunks.first() {
+        if keywords.iter().filter(|&k| word.contains(k)).count() > 0 {
+          source.push(string!(line));
+          continue;
         }
-    
-        continue;
       }
+
+      let pattern = regex::Regex::new(r"[\t|\s]+(?P<fname>\w+)\s*\(\).*").unwrap();
+      for name in &function_names {
+        if let Some(m) = pattern.captures(line.trim()) {
+          if m.len() > 0 {
+            println!("F: {}", name);
+            source.push(string!(line));
   
-      result.push(line.trim().to_string());
+            break;  
+          } 
+        }
+      }
+
+      source.push(format!("  exec(\"{}\")", line.trim().replace("\"", "")));
     }
-  
-    (
-      result.join("\n"),
-      registry
-    )
+
+    let source = source.join("\n");
+
+    (format!(r#"{}"#, source).to_string(), registry)
   }
   
 }

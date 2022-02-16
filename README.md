@@ -11,8 +11,9 @@ defining tasks. Motive uses *task* to identify commands that can be run from the
 ```lua
 -- task identifies what can be run using: $ motive taskname
 
-task taskname do -- this will get printed when running: $ motive list
-  exec("echo", "Hello world")
+task taskname -- this will get printed when running: $ motive list
+  echo "Hello world"
+  @ls -la
 end
 
 -- This function cannot be called from the command line and only available
@@ -22,11 +23,28 @@ function hello()
 end
 
 -- A task can call a lua function
-task funcall do -- Call a lua function
+task funcall -- Call a lua function
   hello()
 end
 
 ```
+
+Motive's Lua subset has some special magic in it that knows if you are calling Lua or not. You can use
+functions and call the functions like normal and if you want to call something from then command line
+you just type out the command (from within a Task declaration.). Like:
+
+```lua
+
+task hi
+  ls -la
+  @ls -la
+end
+
+```
+
+The first call to `ls -la` will print the results to the terminal, and by adding `@` in front
+of our shell command it will mute the output, ie: `@ls -la`
+
 
 With your Manifest in place, simply call your task from the command line:
 
@@ -36,6 +54,9 @@ $ motive funcall
 $ motive taskname
 > Hello world
 ```
+
+### Breaking changes
+- `do` is no longer used when defining a task.
 
 ### What's included?
 > Everything Lua offers with the addition of a fancy `exec` function that runs shell commands.

@@ -9,6 +9,7 @@ edition = "2021"
 oxide = {path = "./libs/oxide"}
 mlua_derive = "0.6.0"
 colored = "2.0.0"
+regex = "1.5.4"
 
 [dependencies.tokio]
 version = "1.16.1"

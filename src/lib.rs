@@ -32,6 +32,13 @@ use commands::{
 
 
 pub async fn run() -> Result<()> {
+  if cfg!(debug_assertions) {
+  } else {
+    std::panic::set_hook(Box::new(|_| {
+      console_error!("Something went wrong...");
+    }));  
+  }
+
   let current_dir = env::current_dir().unwrap();
   let manifest = current_dir.join("manifest");
 
