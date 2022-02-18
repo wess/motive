@@ -16,7 +16,10 @@ use std::env;
 use clap::{
   App,
   AppSettings,
+  Arg,
 };
+
+extern crate logos;
 
 #[macro_use]
 extern crate oxide;
@@ -57,11 +60,13 @@ pub async fn run() -> Result<()> {
       .after_help("\n")
       .setting(AppSettings::AllowExternalSubcommands)
       .setting(AppSettings::ArgRequiredElseHelp)
+      .setting(AppSettings::TrailingVarArg)
+      // .arg(Arg::new("vargs").multiple_values(true))
       .subcommand(Init::app())
       .subcommand(
         App::new("list")
               .about("List available tasks from Manifest")
-    );
+      );
 
 
   let mut help = vec![];
@@ -77,15 +82,31 @@ pub async fn run() -> Result<()> {
       }
     },
     Some(cmd) => {
+      println!("cmd: {}", cmd);
+
       println!();
 
       let e = match engine {
         Some(e) => e,
-        None => console_panic!("No manifest found"),
+        None => console_panic!("No manifest found, run `motive init` to create one"),
       };
 
       if e.has_task(string!(cmd)) {
-        e.run(string!(cmd)).await?;
+        let mut vargs: Option<Vec<&str>> = None;
+
+        match matches.subcommand() {
+          Some((_, sub_m)) => {
+            vargs = Some(
+              sub_m.values_of("").unwrap().collect::<Vec<&str>>()
+            );
+          },
+          None => {},
+        }
+
+        e.run(
+          string!(cmd),
+          vargs,
+        ).await?;
       } else {
         console_error!("Unknown command: {}", cmd);
         println!("{}", String::from_utf8_lossy(&help));  

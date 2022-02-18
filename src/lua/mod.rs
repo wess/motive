@@ -23,6 +23,8 @@ use mlua::{
   Variadic,
 };
 
+mod parser;
+
 use colored::*;
 
 
@@ -51,20 +53,40 @@ const IGNORED_KEYWORDS: [&str; 22] = [
   "print",
 ];
 
+pub struct EngineContext {
+  pub functions: Vec<String>,
+  pub tasks: HashMap<String, String>,
+  pub watches: HashMap<String, String>,
+  pub exports: HashMap<String, String>,
+  pub assignments: Vec<String>,
+}
+
+impl Default for EngineContext {
+  fn default() -> Self {
+    Self {
+      functions: Vec::new(),
+      tasks: HashMap::new(),
+      watches: HashMap::new(),
+      exports: HashMap::new(),
+      assignments: Vec::new(),
+    }
+  }
+}
+
 pub struct Engine {
   lua: Lua,
   source:String,
-  pub tasks:HashMap<String, String>,
+  pub context: EngineContext,
 }
 
 impl Engine {
   pub fn new(source:String) -> crate::Result<Engine> {
-    let (src, registry) = Self::translate(source);
+    let (src, context) = Self::translate(source);
 
     let this = Engine {
       lua: Lua::new(),
       source: src,
-      tasks: registry,
+      context: context,
     };
 
     let motive = this.lua.create_table()?;
@@ -80,7 +102,7 @@ impl Engine {
   }
 
   pub fn has_task(&self, name:String) -> bool {
-    let keys = self.tasks.clone().into_iter().map(|(k, _)| k).collect::<Vec<String>>();
+    let keys = self.context.tasks.clone().into_iter().map(|(k, _)| k).collect::<Vec<String>>();
 
     return keys.contains(&name);
   }
@@ -90,7 +112,7 @@ impl Engine {
 
     println!("{}\n", "Motive Tasks:".bold());
 
-    for (k, v) in &self.tasks {
+    for (k, v) in &self.context.tasks {
       let mut out:Vec<String> = vec![format!("{}", k.bold())];
         
       if v.len() > 0 {
@@ -103,7 +125,15 @@ impl Engine {
     println!();
   }
 
-  pub async fn run(&self, task:String) -> LuaResult<()> {
+  pub async fn run(&self, task:String, vargs:Option<Vec<&str>>) -> LuaResult<()> {
+    let args = self.lua.create_table().unwrap();
+
+    for (i, arg) in vargs.unwrap_or(vec![]).iter().enumerate() {
+      args.set(i, arg.clone()).unwrap();
+    }
+    
+    self.lua.globals().set("arguments", args)?;
+
     let tasks = self.lua.globals().get::<_, LuaTable>("motive")?.get::<_, LuaTable>("tasks")?;
     let task:mlua::Function = tasks.get(task)?;
     
@@ -165,73 +195,23 @@ impl Engine {
     names
   }
 
-  fn translate(raw:String) -> (String, HashMap<String, String>) {
-    let function_names = Self::function_names(raw.clone());
-    let keywords = IGNORED_KEYWORDS.to_vec();
-    let mut registry = HashMap::new();
+  fn translate(raw:String) -> (String, EngineContext) {
+    let raw_source = &raw.clone();
+    let mut parser = parser::Parser::new(raw_source);
+    let source = parser.run().unwrap();
 
-    let mut source:Vec<String> = vec![string!("motive.tasks = {}\n")];
+    println!("{}", source);
 
-
-    for (index, line) in raw.lines().into_iter().enumerate() {
-      if line.starts_with("task") {
-        let mut current = string!(line);
-
-        let mut description = string!("");
-        let parts = line.split("--").collect::<Vec<&str>>();
-        
-        if line.contains("--") {
-          current = string!(parts[0]);
-          description = string!(parts[1]);
-        }
-
-        let name = current
-        .replace("task", "")
-        .trim()
-        .to_string();
-
-        registry.insert(name.clone(), description.clone());
-
-        source.push(
-          format!("motive.tasks.{} = function()\n", name)
-        );
-
-        continue;
+    (
+      source,
+      EngineContext {
+        functions: parser.functions.clone(),
+        tasks: parser.tasks.clone(),
+        watches: parser.watches.clone(),
+        exports: parser.exports.clone(),
+        assignments: parser.assignments.clone(),
       }
-
-      if line.starts_with("--") || line.is_empty() || index < 1 {
-        source.push(string!(line));
-
-        continue;
-      }
-      
-
-      let chunks:Vec<String> = line.trim().split(" ").into_iter().map(|s| s.to_string()).collect();
-      if let Some(word) = chunks.first() {
-        if keywords.iter().filter(|&k| word.contains(k)).count() > 0 {
-          source.push(string!(line));
-          continue;
-        }
-      }
-
-      let pattern = regex::Regex::new(r"[\t|\s]+(?P<fname>\w+)\s*\(\).*").unwrap();
-      for name in &function_names {
-        if let Some(m) = pattern.captures(line.trim()) {
-          if m.len() > 0 {
-            println!("F: {}", name);
-            source.push(string!(line));
-  
-            break;  
-          } 
-        }
-      }
-
-      source.push(format!("  exec(\"{}\")", line.trim().replace("\"", "")));
-    }
-
-    let source = source.join("\n");
-
-    (format!(r#"{}"#, source).to_string(), registry)
+    )
   }
   
 }

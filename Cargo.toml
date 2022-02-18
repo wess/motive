@@ -10,6 +10,14 @@ oxide = {path = "./libs/oxide"}
 mlua_derive = "0.6.0"
 colored = "2.0.0"
 regex = "1.5.4"
+notify = "4.0.17"
+serde_json = "1.0.79"
+logos = "0.12.0"
+text-size = "1.1.0"
+num-derive = "0.3.3"
+num-traits = "0.2.14"
+strum = "0.23.0"
+strum_macros = "0.23.1"
 
 [dependencies.tokio]
 version = "1.16.1"
