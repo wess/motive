@@ -18,6 +18,23 @@ num-derive = "0.3.3"
 num-traits = "0.2.14"
 strum = "0.23.0"
 strum_macros = "0.23.1"
+tokio-stream = "0.1.8"
+glob = "0.3.0"
+futures = "0.3.21"
+clearscreen = "1.0.9"
+async-recursion = "1.0.0"
+
+[dependencies.ctrlc] 
+version = "3.2.1"
+features = ["termination"]
+
+[dependencies.uuid]
+version = "0.8.2"
+features = ["v4"]
+
+[dependencies.tokio-serde]
+version = "0.8.0"
+features = ["json"]
 
 [dependencies.tokio]
 version = "1.16.1"
@@ -27,7 +44,7 @@ features = ["full"]
 version = "3.0.14"
 features = ["derive"]
 
-[dependencies.serde]
+[dependencies.serde] 
 version = "1.0.136"
 features = ["derive"]
 

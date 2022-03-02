@@ -60,6 +60,14 @@ impl<'a> Parser<'a> {
     }
   }
 
+  fn check_unique(&self, identifier:&String) -> bool {
+    return !self.functions.contains(identifier) 
+        || !self.tasks.contains_key(identifier) 
+        || !self.watches.contains_key(identifier) 
+        || !self.exports.contains_key(identifier)
+        || !self.assignments.contains(identifier)
+  }
+
   fn parse_function(&mut self) -> Vec<String> {
     let mut source:Vec<String> = vec![];
     let mut current:Vec<String> = vec![];
@@ -108,6 +116,7 @@ impl<'a> Parser<'a> {
     let mut description:String = string!("");
     let mut source:Vec<String> = vec![];
     let mut current:Vec<String> = vec![];
+    let mut exec:Vec<String> = vec![];
 
     while let Some(entry) = self.peek() {
       match entry.token {
@@ -135,7 +144,11 @@ impl<'a> Parser<'a> {
               format!("motive.tasks.{} = function()", entry.text.to_string())
             );
           } else {
-            current.push(entry.text);
+            if current.len() == 0 && self.check_unique(&entry.text) {
+
+            } else {
+              current.push(entry.text);
+            }
           }
         },
         Token::Comment => {

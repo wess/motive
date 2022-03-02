@@ -24,10 +24,14 @@ extern crate logos;
 #[macro_use]
 extern crate oxide;
 
+pub mod macros;
+
 pub mod result;
 pub use result::Result;
 
 mod lua;
+mod watch;
+
 mod commands;
 use commands::{
   Init,
