@@ -1,3 +1,0 @@
-[submodule "libs/oxide"]
-	path = libs/oxide
-	url = git@github.com:wess/oxide.git
