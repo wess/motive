@@ -111,8 +111,9 @@ impl<'a> Parser<'a> {
     source
   }
  
-  fn parse_exec(&mut self) -> Vec<String> {
-    let mut line:Vec<String> = vec![string!("exec(\"")];
+  fn parse_exec(&mut self, muted:bool) -> Vec<String> {
+    let prefix = if muted { string!("exec(\"@")} else { string!("exec(\"") };
+    let mut line:Vec<String> = vec![prefix];
 
     while let Some(entry) = self.peek() {
       match entry.token {
@@ -138,6 +139,7 @@ impl<'a> Parser<'a> {
     let mut description:String = string!("");
     let mut source:Vec<String> = vec![];
     let mut current:Vec<String> = vec![];
+    let mut exec_muted = false;
 
     while let Some(entry) = self.peek() {
       match entry.token {
@@ -145,6 +147,7 @@ impl<'a> Parser<'a> {
           if current.len() > 0 {
             source.push(current.join(""));
             current = vec![];
+            exec_muted = false;
           }
         },
         Token::End => {
@@ -156,6 +159,11 @@ impl<'a> Parser<'a> {
           let mut block = self.parse_block();
           source.append(&mut block);
         }
+        Token::Mute => {
+          if current.len() == 0 {
+            exec_muted = true;
+          }
+        },
         Token::Task => {},
         Token::Identifier => {
           if !self.functions.contains(&entry.text) && source.len() == 0 {
@@ -165,7 +173,7 @@ impl<'a> Parser<'a> {
               format!("motive.tasks.{} = function()", entry.text.to_string())
             );
           } else if self.check_unique(&entry.text) == false {
-            current = self.parse_exec();
+            current = self.parse_exec(exec_muted);
           } else {
             current.push(entry.text);
           }
@@ -180,6 +188,7 @@ impl<'a> Parser<'a> {
           current.push(entry.text.to_string());
         },
          
+        Token::Whitespace => {},
         _ => {
           current.push(entry.text.to_string());
         }
