@@ -200,8 +200,6 @@ impl Engine {
     let mut parser = parser::Parser::new(raw_source);
     let source = parser.run().unwrap();
 
-    println!("{}", source);
-
     (
       source,
       EngineContext {

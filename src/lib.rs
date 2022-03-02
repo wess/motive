@@ -86,8 +86,6 @@ pub async fn run() -> Result<()> {
       }
     },
     Some(cmd) => {
-      println!("cmd: {}", cmd);
-
       println!();
 
       let e = match engine {
@@ -100,9 +98,11 @@ pub async fn run() -> Result<()> {
 
         match matches.subcommand() {
           Some((_, sub_m)) => {
-            vargs = Some(
-              sub_m.values_of("").unwrap().collect::<Vec<&str>>()
-            );
+
+            match sub_m.values_of("") {
+              Some(v) => vargs = Some(v.collect::<Vec<&str>>()),
+              None => {},
+            }
           },
           None => {},
         }

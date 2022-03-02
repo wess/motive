@@ -29,6 +29,7 @@ pub enum Token {
 
   #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
   Identifier,
+  
   #[token("#")]
   #[token("{")]
   #[token("}")]

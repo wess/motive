@@ -61,11 +61,11 @@ impl<'a> Parser<'a> {
   }
 
   fn check_unique(&self, identifier:&String) -> bool {
-    return !self.functions.contains(identifier) 
-        || !self.tasks.contains_key(identifier) 
-        || !self.watches.contains_key(identifier) 
-        || !self.exports.contains_key(identifier)
-        || !self.assignments.contains(identifier)
+    return self.functions.contains(identifier) 
+        || self.tasks.contains_key(identifier) 
+        || self.watches.contains_key(identifier) 
+        || self.exports.contains_key(identifier)
+        || self.assignments.contains(identifier)
   }
 
   fn parse_function(&mut self) -> Vec<String> {
@@ -111,19 +111,40 @@ impl<'a> Parser<'a> {
     source
   }
  
+  fn parse_exec(&mut self) -> Vec<String> {
+    let mut line:Vec<String> = vec![string!("exec(\"")];
+
+    while let Some(entry) = self.peek() {
+      match entry.token {
+        Token::Newline => {
+            break;
+        },
+
+        _ => {
+          line.push(entry.text.replace("\"", "'"));
+        }
+      }
+
+      self.chomp();
+    }
+
+    line.push(string!("\")"));
+
+    line.clone()
+  }
+
   fn parse_task(&mut self) -> Vec<String> {
     let mut name:String = string!("");
     let mut description:String = string!("");
     let mut source:Vec<String> = vec![];
     let mut current:Vec<String> = vec![];
-    let mut exec:Vec<String> = vec![];
 
     while let Some(entry) = self.peek() {
       match entry.token {
         Token::Newline => {
           if current.len() > 0 {
             source.push(current.join(""));
-            current.clear();
+            current = vec![];
           }
         },
         Token::End => {
@@ -143,12 +164,10 @@ impl<'a> Parser<'a> {
             current.push(
               format!("motive.tasks.{} = function()", entry.text.to_string())
             );
+          } else if self.check_unique(&entry.text) == false {
+            current = self.parse_exec();
           } else {
-            if current.len() == 0 && self.check_unique(&entry.text) {
-
-            } else {
-              current.push(entry.text);
-            }
+            current.push(entry.text);
           }
         },
         Token::Comment => {

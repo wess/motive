@@ -59,7 +59,7 @@ test: ## Run Tests
 	@$(CARGO) test --all-features $(TEST_FILTER)
 
 dev: ## Run development
-	@clear && $(CARGO) run --all-features -- example
+	@clear && $(CARGO) run --all-features -- example bleep bloop
 
 docs: ## Build docs at target/doc
 	@$(CARGO) doc
