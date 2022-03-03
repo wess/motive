@@ -31,7 +31,7 @@ function example_function()
   print("Hello world")
 end
 
-task example do -- This is a task description
+task example -- This is a task description
   example_function()
 
   exec("ls -la")
